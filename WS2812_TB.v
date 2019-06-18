@@ -1,6 +1,6 @@
 
 // synopsys translate_off
-`timescale 1 ps / 1 ps
+`timescale 1 ns  / 100 ps
 // synopsys translate_on
 module WS2812_TB();
 	
@@ -10,18 +10,37 @@ module WS2812_TB();
 	reg [7:0]	dR, dG, dB;
 	reg [8:0] LED_IDX;
 	wire oCTRL_OUT;
+	reg reset;
 	
 	initial begin
-	dR=0;
-	dG=25;
-	dB=50;
-	LED_IDX=0;
-	iSIGNAL_CLOCK=1;
+	iSIGNAL_CLOCK=0;
 	iDATA_CLOCK=0;
-	#50 iDATA_CLOCK=1;
-	#60 iDATA_CLOCK=0;
-
+	reset=0;
+	reset=1;
+	#20 reset=0;
+	
+	dR=255;
+	dG=170;
+	dB=240;
+	LED_IDX=0;
+	#20 iDATA_CLOCK=1;
+	#20 iDATA_CLOCK=0;
+	LED_IDX=1;
+	dR=15;
+	dG=85;
+	dB=0;
+	#20 iDATA_CLOCK=1;
+	#20 iDATA_CLOCK=0;
+	
+	#2 dR=231;
+	#4 dG=195;
+	#8 LED_IDX=1;
+	#7 dB=136;
+	#20 iDATA_CLOCK=1;
+	#20 iDATA_CLOCK=0;
 	end
+	
+	
 	always begin
 	#5 iSIGNAL_CLOCK=~iSIGNAL_CLOCK;
 	end
@@ -33,6 +52,7 @@ module WS2812_TB();
 	.dG(dG),
 	.dB(dB),
 	.LED_IDX(LED_IDX),
+	.ext_reset(reset),
 	.oCTRL_OUT(oCTRL_OUT));
 	
 endmodule

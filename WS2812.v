@@ -1,15 +1,17 @@
 // synopsys translate_off
-`timescale 1 ps / 1 ps
+`timescale 1 ns  / 100 ps
 // synopsys translate_on
 
-module WS2812(iSIGNAL_CLOCK,iDATA_CLOCK,dR, dG, dB,oCTRL_OUT, LED_IDX);
+module WS2812(iSIGNAL_CLOCK,iDATA_CLOCK,dR, dG, dB,oCTRL_OUT, LED_IDX, ext_reset);
 	input 		iSIGNAL_CLOCK;//100 MHz clock for signal timing
 	input 		iDATA_CLOCK;//clock driven by data input
 	input [7:0]	dR, dG, dB;
 	input [8:0] LED_IDX;
-	
+	input ext_reset;
 	output 		oCTRL_OUT;
+	
 	//the following is times specified by the ws2812b datasheet
+	//units are in clock periods 10ns in this case
 	parameter T0H = 40;
 	parameter T1H = 80; 
 	parameter T0L = 85;
@@ -58,9 +60,9 @@ RAM2P ram(
 not 100% sure how to do this but the idea is that the higher the number
 of LEDs indexed the larger the number of LEDs the program will loop through
 this should give the fastest possible write rate Should probably impliment
-a reset
+a reset. basicaly this needs work
 */
-always @(LED_IDX)
+always @(posedge iDATA_CLOCK) //makes it so the led count only gets updated when data is entered
 begin
 	if (LED_IDX+1 > ledCount && LED_IDX)
 	begin
@@ -69,19 +71,17 @@ begin
 end
 
 
-initial 
-begin
-	clk_div=0;
+
+
+
+always @(posedge ext_reset) begin
+	read_address=0;
+	ledCount=0;
+	bit_counter=0;
+	signal_timer=0;
 end
 
 
-initial 
-begin
-read_address=0;
-ledCount=0;
-bit_counter=0;
-signal_timer=0;
-end
 always @(posedge iSIGNAL_CLOCK)
 begin
 	if (signal_timer==0 && ~sig_reset)
@@ -99,7 +99,7 @@ begin
 			TH=T0H;
 			TE=T0H+T0L;
 		end
-		rCTRL_OUT=(signal_timer < TH)?1:0;
+		rCTRL_OUT=(signal_timer < TH)?1:0;//toggles control line
 		if (signal_timer >= TE)
 		begin
 			srCDATA<=srCDATA<<1;
@@ -116,7 +116,7 @@ begin
 			begin
 				bit_counter <= 0;
 				srCDATA <= wCDATA;
-				if (read_address == 0) begin
+				if (read_address == 0) begin// decide if need to enter reset mode here
 					sig_reset <= 1;
 				end
 			end
@@ -126,13 +126,14 @@ begin
 			end
 		end
 	end
-	if (sig_reset && signal_timer>TRS) begin
+	if (sig_reset && signal_timer>TRS) begin// impliment reset timer
 		signal_timer <= 0;
 		sig_reset <= 0;
 		srCDATA <= wCDATA;
 	end
-	
-	signal_timer=signal_timer+1;
+	else begin
+		signal_timer = signal_timer+1; 
+	end
 end
 
 
