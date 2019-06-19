@@ -34,7 +34,7 @@ module WS2812_TB();
 	
 	#2 dR=231;
 	#4 dG=195;
-	#8 LED_IDX=1;
+	#8 LED_IDX=2;
 	#7 dB=136;
 	#20 iDATA_CLOCK=1;
 	#20 iDATA_CLOCK=0;

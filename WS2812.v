@@ -17,7 +17,6 @@ module WS2812(iSIGNAL_CLOCK,iDATA_CLOCK,dR, dG, dB,oCTRL_OUT, LED_IDX, ext_reset
 	parameter T0L = 85;
 	parameter T1L = 45;
 	parameter TRS = 5100;
-	parameter TIMER_BITS = 5100;
 
 	
 
@@ -79,6 +78,8 @@ always @(posedge ext_reset) begin
 	ledCount=0;
 	bit_counter=0;
 	signal_timer=0;
+	rCTRL_OUT=0;
+	sig_reset=0;
 end
 
 
