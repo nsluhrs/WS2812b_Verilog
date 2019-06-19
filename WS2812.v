@@ -92,19 +92,18 @@ begin
 	if (~sig_reset) begin
 		if (srCDATA[23])
 		begin
-			TH=T1H;
-			TE=T1H+T1L;
+			TH<=T1H;
+			TE<=T1H+T1L;
 		end
 		else
 		begin
-			TH=T0H;
-			TE=T0H+T0L;
+			TH<=T0H;
+			TE<=T0H+T0L;
 		end
 		rCTRL_OUT=(signal_timer < TH)?1:0;//toggles control line
 		if (signal_timer >= TE)
 		begin
 			srCDATA<=srCDATA<<1;
-			signal_timer<=0;
 			if (bit_counter == 11) begin//change read address here
 				if (read_address >= ledCount) begin
 					read_address<=0;
@@ -133,7 +132,12 @@ begin
 		srCDATA <= wCDATA;
 	end
 	else begin
-		signal_timer = signal_timer+1; 
+		if (signal_timer >= TE) begin
+			signal_timer <= 0;
+		end
+		else begin
+			signal_timer <= signal_timer+1; 
+		end
 	end
 end
 
