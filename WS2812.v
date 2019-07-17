@@ -61,11 +61,16 @@ of LEDs indexed the larger the number of LEDs the program will loop through
 this should give the fastest possible write rate Should probably impliment
 a reset. basicaly this needs work
 */
-always @(posedge iDATA_CLOCK) //makes it so the led count only gets updated when data is entered
+always @(posedge iDATA_CLOCK or posedge ext_reset) //makes it so the led count only gets updated when data is entered
 begin
-	if (LED_IDX+1 > ledCount && LED_IDX)
-	begin
-		ledCount <= LED_IDX+1;
+	if (ext_reset) begin
+		ledCount=0;
+	end
+	else begin
+		if (LED_IDX+1 > ledCount && LED_IDX)
+		begin
+			ledCount <= LED_IDX+1;
+		end
 	end
 end
 
@@ -73,70 +78,73 @@ end
 
 
 
-always @(posedge ext_reset) begin
-	read_address=0;
-	ledCount=0;
-	bit_counter=0;
-	signal_timer=0;
-	rCTRL_OUT=0;
-	sig_reset=0;
-end
 
 
-always @(posedge iSIGNAL_CLOCK)
+
+always @(posedge iSIGNAL_CLOCK or posedge ext_reset)
 begin
-	if (signal_timer==0 && ~sig_reset)
-	begin
-		rCTRL_OUT<=1;
+	if (ext_reset) begin
+		read_address=0;
+		
+		bit_counter=0;
+		signal_timer=0;
+		rCTRL_OUT=0;
+		sig_reset=0;
 	end
-	if (~sig_reset) begin
-		if (srCDATA[23])
+	else begin
+		if (signal_timer==0 && ~sig_reset)
 		begin
-			TH<=T1H;
-			TE<=T1H+T1L;
+			rCTRL_OUT<=1;
 		end
-		else
-		begin
-			TH<=T0H;
-			TE<=T0H+T0L;
-		end
-		rCTRL_OUT=(signal_timer < TH)?1:0;//toggles control line
-		if (signal_timer >= TE)
-		begin
-			srCDATA<=srCDATA<<1;
-			if (bit_counter == 11) begin//change read address here
-				if (read_address >= ledCount) begin
-					read_address<=0;
-				end
-				else begin
-					read_address<=read_address+1;
-				end
-			end
-			if (bit_counter == 23)//read from ram output here
+		if (~sig_reset) begin
+			if (srCDATA[23])
 			begin
-				bit_counter <= 0;
-				srCDATA <= wCDATA;
-				if (read_address == 0) begin// decide if need to enter reset mode here
-					sig_reset <= 1;
-				end
+				TH<=T1H;
+				TE<=T1H+T1L;
 			end
 			else
 			begin
-				bit_counter<=bit_counter+1;
+				TH<=T0H;
+				TE<=T0H+T0L;
+			end
+			rCTRL_OUT<=(signal_timer < TH)?1:0;//toggles control line
+			if (signal_timer >= TE)
+			begin
+				srCDATA<=srCDATA<<1;
+				if (bit_counter == 11) begin//change read address here
+					if (read_address >= ledCount) begin
+						read_address<=0;
+					end
+					else begin
+						read_address<=read_address+1;
+					end
+				end
+				if (bit_counter == 23)//read from ram output here
+				begin
+					bit_counter <= 0;
+					srCDATA <= wCDATA;
+					if (read_address == 0) begin// decide if need to enter reset mode here
+						sig_reset <= 1;
+					end
+				end
+				else
+				begin
+					bit_counter<=bit_counter+1;
+				end
 			end
 		end
-	end
-	if (sig_reset && signal_timer>TRS) begin// impliment reset timer
-		signal_timer <= 0;
-		sig_reset <= 0;
-		srCDATA <= wCDATA;
-	end
-	else begin
-		if (signal_timer >= TE) begin
+		if (sig_reset && signal_timer>TRS) begin// impliment reset timer
 			signal_timer <= 0;
+			sig_reset <= 0;
+			srCDATA <= wCDATA;
 		end
 		else begin
-			signal_timer <= signal_timer+1; 
+			if (signal_timer >= TE) begin
+				signal_timer <= 0;
+			end
+			else begin
+				signal_timer <= signal_timer+1; 
+			end
 		end
 	end
 end

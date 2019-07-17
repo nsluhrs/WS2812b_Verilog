@@ -33,8 +33,9 @@
 //refer to the applicable agreement for further details.
 
 
+
 // synopsys translate_off
-`timescale 1 ps / 1 ps
+`timescale 1 ns  / 10 ps
 // synopsys translate_on
 module RAM2P (
 	data,
